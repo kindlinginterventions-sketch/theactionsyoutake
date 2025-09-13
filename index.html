@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Form + Live Results</title>
+    <style>
+      :root {
+        --form-min-h: 640px;
+        --form-max-h: 1100px;
+        --chart-min-h: 360px;
+        --chart-max-h: 720px;
+      }
+      body { margin: 0; padding: 0; font-family: Arial, sans-serif; background:#fff; }
+      .container { max-width: 1100px; margin: 0 auto; padding: 16px; }
+      .block { margin-bottom: 24px; }
+      iframe { width: 100%; border: 0; }
+      .form-frame { height: clamp(var(--form-min-h), 90vh, var(--form-max-h)); }
+      .chart-frame { height: clamp(var(--chart-min-h), 60vw, var(--chart-max-h)); }
+      @media (max-width: 480px) {
+        .container { padding: 12px; }
+        .form-frame { height: clamp(600px, 95vh, 1050px); }
+        .chart-frame { height: clamp(320px, 80vw, 640px); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Google Form (responsive) -->
+      <div class="block">
+        <iframe
+          class="form-frame"
+          title="Quick pulse: actions taken (Form)"
+          src="https://docs.google.com/forms/d/e/1FAIpQLSePnkxnhsjCdUVEYkUXFRT-IK0H5nDqQHjbOrNqdVxB67K9UQ/viewform?embedded=true">
+        </iframe>
+      </div>
+
+      <!-- Google Chart (responsive) -->
+      <div class="block">
+        <iframe
+          class="chart-frame"
+          title="Live results chart"
+          scrolling="no"
+          src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS1-u7X5Qm212u-m4uNqtbM4djbjHepF5vJMp2jAh_Yst-7tfvAVGjSwHNkElHNQPKdE52sfXL2y2ZH/pubchart?oid=543343219&amp;format=interactive">
+        </iframe>
+      </div>
+    </div>
+  </body>
+</html>
