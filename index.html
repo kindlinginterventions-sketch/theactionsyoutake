@@ -35,4 +35,103 @@
       }
       .chart-wrap iframe {
         width: 100%;
-        height: 100
+        height: 100%;
+        position: relative;
+      }
+
+      /* Tiny screens */
+      @media (max-width: 480px) {
+        .container { padding: 12px; }
+      }
+
+      /* Optional: a simple “jump to results” link */
+      .actions { margin: 0 0 12px 0; }
+      .actions a {
+        text-decoration: none;
+        display: inline-block;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+
+      <!-- Optional quick jump link -->
+      <div class="actions">
+        <a href="#results">Skip to live results ↓</a>
+      </div>
+
+      <!-- Google Form (responsive) -->
+      <div class="block">
+        <iframe
+          id="formFrame"
+          title="Quick pulse: actions taken (Form)"
+          src="https://docs.google.com/forms/d/e/1FAIpQLSePnkxnhsjCdUVEYkUXFRT-IK0H5nDqQHjbOrNqdVxB67K9UQ/viewform?embedded=true">
+        </iframe>
+      </div>
+
+      <!-- Google Chart (responsive) -->
+      <div class="block" id="results">
+        <div class="chart-wrap">
+          <iframe
+            id="chartFrame"
+            title="Live results chart"
+            scrolling="no"
+            src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS1-u7X5Qm212u-m4uNqtbM4djbjHepF5vJMp2jAh_Yst-7tfvAVGjSwHNkElHNQPKdE52sfXL2y2ZH/pubchart?oid=543343219&amp;format=interactive">
+          </iframe>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 1) Shrink the form after submission and jump to results.
+      (function () {
+        var form = document.getElementById('formFrame');
+        var loadCount = 0;
+        if (!form) return;
+
+        form.addEventListener('load', function () {
+          loadCount += 1;
+          // On the second load, assume the user has submitted.
+          if (loadCount > 1) {
+            form.style.height = 'var(--form-after-submit)';
+            var results = document.getElementById('results');
+            if (results && results.scrollIntoView) {
+              results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }
+        }, { passive: true });
+      })();
+
+      // 2) Nudge the chart to re-render on resize so it fits the new width.
+      (function () {
+        var chart = document.getElementById('chartFrame');
+        if (!chart) return;
+
+        var debounce;
+        function refreshChart() {
+          // Reassigning src forces a lightweight reload inside the iframe
+          // so Google recalculates to the current iframe width/height.
+          var src = chart.src;
+          chart.src = src;
+        }
+
+        // Refresh once after initial load (helps on mobile orientation changes too)
+        window.addEventListener('load', function () {
+          setTimeout(refreshChart, 100);
+        });
+
+        window.addEventListener('resize', function () {
+          clearTimeout(debounce);
+          debounce = setTimeout(refreshChart, 250);
+        });
+
+        window.addEventListener('orientationchange', function () {
+          setTimeout(refreshChart, 250);
+        });
+      })();
+    </script>
+  </body>
+</html>
