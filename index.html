@@ -11,12 +11,12 @@
         --form-initial-max: 1100px;
         --form-after-submit: 320px;
 
-        /* CHART original published size from Google (keep these matched to your embed) */
+        /* CHART original published size from Google (must match your embed) */
         --chart-base-w: 600;  /* px */
         --chart-base-h: 377;  /* px */
 
-        /* Max upscale factor to avoid blur on giant screens (raise if you want) */
-        --chart-max-scale: 2.0;
+        /* ✅ Cap how wide the chart is allowed to get */
+        --chart-max-width: 960px;  /* try 900–1100px to taste */
       }
 
       html, body { margin:0; padding:0; background:#fff; font-family: Arial, sans-serif; }
@@ -31,19 +31,24 @@
         transition: height 240ms ease;
       }
 
-      /* Chart scaler: keeps aspect and centers the chart while we scale it */
+      /* Chart wrappers:
+         - .chart-outer: centers chart and caps max width so it never grows too big
+         - #chartContainer: reserves exact scaled height, hides overflow
+         - #chartScaler: the fixed-size inner box we scale up/down smoothly
+      */
+      .chart-outer {
+        width: 100%;
+        max-width: var(--chart-max-width);
+        margin: 0 auto;          /* center within page */
+      }
       #chartContainer {
         width: 100%;
-        display: flex;
-        justify-content: center;  /* center horizontally */
-        align-items: flex-start;
-        /* height is set via JS to base_h * scale so the page reserves the right space */
-        overflow: hidden;
+        overflow: hidden;        /* no horizontal cut-off/scrollbars */
       }
       #chartScaler {
         width: calc(var(--chart-base-w) * 1px);
         height: calc(var(--chart-base-h) * 1px);
-        transform-origin: 0 0; /* scale from top-left */
+        transform-origin: 0 0;   /* scale from top-left */
       }
 
       @media (max-width: 480px) {
@@ -76,25 +81,27 @@
         </iframe>
       </div>
 
-      <!-- Google Chart (scaled responsively) -->
+      <!-- Google Chart (fluid up to a max width) -->
       <div class="block" id="results">
-        <div id="chartContainer">
-          <div id="chartScaler">
-            <iframe
-              id="chartFrame"
-              title="Live results chart"
-              width="600"
-              height="377"
-              scrolling="no"
-              src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS1-u7X5Qm212u-m4uNqtbM4djbjHepF5vJMp2jAh_Yst-7tfvAVGjSwHNkElHNQPKdE52sfXL2y2ZH/pubchart?oid=543343219&amp;format=interactive">
-            </iframe>
+        <div class="chart-outer">
+          <div id="chartContainer">
+            <div id="chartScaler">
+              <iframe
+                id="chartFrame"
+                title="Live results chart"
+                width="600"
+                height="377"
+                scrolling="no"
+                src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS1-u7X5Qm212u-m4uNqtbM4djbjHepF5vJMp2jAh_Yst-7tfvAVGjSwHNkElHNQPKdE52sfXL2y2ZH/pubchart?oid=543343219&amp;format=interactive">
+              </iframe>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <script>
-      // Shrink form after submission and jump to results
+      // Shrink the form after submission and jump to results
       (function () {
         var form = document.getElementById('formFrame');
         var loadCount = 0;
@@ -104,11 +111,13 @@
           loadCount += 1;
           if (loadCount > 1) {
             form.style.height = 'var(--form-after-submit)';
-            // Force-refresh chart (cache-bust) a moment after submit so new vote shows
+            // Refresh chart (cache-bust) so new vote shows
             setTimeout(function () {
               var chart = document.getElementById('chartFrame');
-              if (chart) chart.src = chart.src.split('#')[0].split('?')[0] + '?v=' + Date.now() +
-                '&' + 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS1-u7X5Qm212u-m4uNqtbM4djbjHepF5vJMp2jAh_Yst-7tfvAVGjSwHNkElHNQPKdE52sfXL2y2ZH/pubchart?oid=543343219&format=interactive'.split('?')[1];
+              if (chart) {
+                var base = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS1-u7X5Qm212u-m4uNqtbM4djbjHepF5vJMp2jAh_Yst-7tfvAVGjSwHNkElHNQPKdE52sfXL2y2ZH/pubchart?oid=543343219&format=interactive";
+                chart.src = base + "&v=" + Date.now();
+              }
             }, 600);
 
             var results = document.getElementById('results');
@@ -119,30 +128,4 @@
         }, { passive: true });
       })();
 
-      // Scale the fixed-size Google chart to fill the container width responsively
-      (function () {
-        var container = document.getElementById('chartContainer');
-        var scaler = document.getElementById('chartScaler');
-        if (!container || !scaler) return;
-
-        var BASE_W = parseFloat(getComputedStyle(scaler).width);  // 600
-        var BASE_H = parseFloat(getComputedStyle(scaler).height); // 377
-        var MAX_SCALE = parseFloat(getComputedStyle(document.documentElement)
-                          .getPropertyValue('--chart-max-scale')) || 2.0;
-
-        function resize() {
-          var cw = container.clientWidth;
-          var scale = cw / BASE_W;
-          if (scale > MAX_SCALE) scale = MAX_SCALE; // cap super-wide upscaling to reduce blurriness
-          if (scale < 0.2) scale = 0.2;             // avoid absurdly tiny charts
-          scaler.style.transform = 'scale(' + scale + ')';
-          container.style.height = (BASE_H * scale) + 'px';
-        }
-
-        window.addEventListener('load', resize);
-        window.addEventListener('resize', function () { requestAnimationFrame(resize); });
-        window.addEventListener('orientationchange', function () { setTimeout(resize, 150); });
-      })();
-    </script>
-  </body>
-</html>
+      // Scale the fixed-size chart to
