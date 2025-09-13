@@ -128,4 +128,27 @@
         }, { passive: true });
       })();
 
-      // Scale the fixed-size chart to
+      // Scale the fixed-size chart to fit the available width, up to the max
+      (function () {
+        var outer = document.querySelector('.chart-outer');
+        var container = document.getElementById('chartContainer');
+        var scaler = document.getElementById('chartScaler');
+        if (!outer || !container || !scaler) return;
+
+        var BASE_W = parseFloat(getComputedStyle(scaler).width);  // 600
+        var BASE_H = parseFloat(getComputedStyle(scaler).height); // 377
+
+        function resize() {
+          var cw = outer.clientWidth;                 // limited by --chart-max-width
+          var scale = cw / BASE_W;                    // exact scale to fill width
+          scaler.style.transform = 'scale(' + scale + ')';
+          container.style.height = (BASE_H * scale) + 'px'; // reserve correct height
+        }
+
+        window.addEventListener('load', resize);
+        window.addEventListener('resize', function () { requestAnimationFrame(resize); });
+        window.addEventListener('orientationchange', function () { setTimeout(resize, 150); });
+      })();
+    </script>
+  </body>
+</html>
