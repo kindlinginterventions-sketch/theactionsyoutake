@@ -6,45 +6,50 @@
     <title>Form + Live Results</title>
     <style>
       :root{
-        /* Tweak these if you want different sizes */
-        --form-initial-min: 640px;   /* form height while filling */
+        /* FORM sizing */
+        --form-initial-min: 640px;
         --form-initial-max: 1100px;
-        --form-after-submit: 320px;  /* form height after submit */
-        --chart-aspect: 16 / 10;     /* width / height ratio for chart */
+        --form-after-submit: 320px;
+
+        /* CHART original published size from Google (keep these matched to your embed) */
+        --chart-base-w: 600;  /* px */
+        --chart-base-h: 377;  /* px */
+
+        /* Max upscale factor to avoid blur on giant screens (raise if you want) */
+        --chart-max-scale: 2.0;
       }
 
       html, body { margin:0; padding:0; background:#fff; font-family: Arial, sans-serif; }
-      /* Let content use full width so the chart can grow; keep a little padding */
       .container { width: 100%; margin: 0 auto; padding: 16px; box-sizing: border-box; }
       .block { margin-bottom: 24px; }
 
-      /* Make iframes fluid and block-level */
       iframe { width: 100%; border: 0; display: block; }
 
-      /* Form height: flexible while filling */
+      /* Form sizing */
       #formFrame {
         height: clamp(var(--form-initial-min), 90vh, var(--form-initial-max));
         transition: height 240ms ease;
       }
 
-      /* Chart: responsive using aspect-ratio so the iframe always fills its box */
-      .chart-wrap {
+      /* Chart scaler: keeps aspect and centers the chart while we scale it */
+      #chartContainer {
         width: 100%;
-        aspect-ratio: var(--chart-aspect);
-        position: relative; /* fallback anchor */
+        display: flex;
+        justify-content: center;  /* center horizontally */
+        align-items: flex-start;
+        /* height is set via JS to base_h * scale so the page reserves the right space */
+        overflow: hidden;
       }
-      .chart-wrap iframe {
-        width: 100%;
-        height: 100%;
-        position: relative;
+      #chartScaler {
+        width: calc(var(--chart-base-w) * 1px);
+        height: calc(var(--chart-base-h) * 1px);
+        transform-origin: 0 0; /* scale from top-left */
       }
 
-      /* Tiny screens */
       @media (max-width: 480px) {
         .container { padding: 12px; }
       }
 
-      /* Optional: a simple “jump to results” link */
       .actions { margin: 0 0 12px 0; }
       .actions a {
         text-decoration: none;
@@ -58,12 +63,11 @@
   <body>
     <div class="container">
 
-      <!-- Optional quick jump link -->
       <div class="actions">
         <a href="#results">Skip to live results ↓</a>
       </div>
 
-      <!-- Google Form (responsive) -->
+      <!-- Google Form -->
       <div class="block">
         <iframe
           id="formFrame"
@@ -72,21 +76,25 @@
         </iframe>
       </div>
 
-      <!-- Google Chart (responsive) -->
+      <!-- Google Chart (scaled responsively) -->
       <div class="block" id="results">
-        <div class="chart-wrap">
-          <iframe
-            id="chartFrame"
-            title="Live results chart"
-            scrolling="no"
-            src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS1-u7X5Qm212u-m4uNqtbM4djbjHepF5vJMp2jAh_Yst-7tfvAVGjSwHNkElHNQPKdE52sfXL2y2ZH/pubchart?oid=543343219&amp;format=interactive">
-          </iframe>
+        <div id="chartContainer">
+          <div id="chartScaler">
+            <iframe
+              id="chartFrame"
+              title="Live results chart"
+              width="600"
+              height="377"
+              scrolling="no"
+              src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS1-u7X5Qm212u-m4uNqtbM4djbjHepF5vJMp2jAh_Yst-7tfvAVGjSwHNkElHNQPKdE52sfXL2y2ZH/pubchart?oid=543343219&amp;format=interactive">
+            </iframe>
+          </div>
         </div>
       </div>
     </div>
 
     <script>
-      // 1) Shrink the form after submission and jump to results.
+      // Shrink form after submission and jump to results
       (function () {
         var form = document.getElementById('formFrame');
         var loadCount = 0;
@@ -94,9 +102,15 @@
 
         form.addEventListener('load', function () {
           loadCount += 1;
-          // On the second load, assume the user has submitted.
           if (loadCount > 1) {
             form.style.height = 'var(--form-after-submit)';
+            // Force-refresh chart (cache-bust) a moment after submit so new vote shows
+            setTimeout(function () {
+              var chart = document.getElementById('chartFrame');
+              if (chart) chart.src = chart.src.split('#')[0].split('?')[0] + '?v=' + Date.now() +
+                '&' + 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS1-u7X5Qm212u-m4uNqtbM4djbjHepF5vJMp2jAh_Yst-7tfvAVGjSwHNkElHNQPKdE52sfXL2y2ZH/pubchart?oid=543343219&format=interactive'.split('?')[1];
+            }, 600);
+
             var results = document.getElementById('results');
             if (results && results.scrollIntoView) {
               results.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -105,32 +119,29 @@
         }, { passive: true });
       })();
 
-      // 2) Nudge the chart to re-render on resize so it fits the new width.
+      // Scale the fixed-size Google chart to fill the container width responsively
       (function () {
-        var chart = document.getElementById('chartFrame');
-        if (!chart) return;
+        var container = document.getElementById('chartContainer');
+        var scaler = document.getElementById('chartScaler');
+        if (!container || !scaler) return;
 
-        var debounce;
-        function refreshChart() {
-          // Reassigning src forces a lightweight reload inside the iframe
-          // so Google recalculates to the current iframe width/height.
-          var src = chart.src;
-          chart.src = src;
+        var BASE_W = parseFloat(getComputedStyle(scaler).width);  // 600
+        var BASE_H = parseFloat(getComputedStyle(scaler).height); // 377
+        var MAX_SCALE = parseFloat(getComputedStyle(document.documentElement)
+                          .getPropertyValue('--chart-max-scale')) || 2.0;
+
+        function resize() {
+          var cw = container.clientWidth;
+          var scale = cw / BASE_W;
+          if (scale > MAX_SCALE) scale = MAX_SCALE; // cap super-wide upscaling to reduce blurriness
+          if (scale < 0.2) scale = 0.2;             // avoid absurdly tiny charts
+          scaler.style.transform = 'scale(' + scale + ')';
+          container.style.height = (BASE_H * scale) + 'px';
         }
 
-        // Refresh once after initial load (helps on mobile orientation changes too)
-        window.addEventListener('load', function () {
-          setTimeout(refreshChart, 100);
-        });
-
-        window.addEventListener('resize', function () {
-          clearTimeout(debounce);
-          debounce = setTimeout(refreshChart, 250);
-        });
-
-        window.addEventListener('orientationchange', function () {
-          setTimeout(refreshChart, 250);
-        });
+        window.addEventListener('load', resize);
+        window.addEventListener('resize', function () { requestAnimationFrame(resize); });
+        window.addEventListener('orientationchange', function () { setTimeout(resize, 150); });
       })();
     </script>
   </body>
