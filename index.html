@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Form + Live Results</title>
 
-    <!-- Light no-cache hints to reduce stale loads -->
+    <!-- Light no-cache hints -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
@@ -17,12 +17,12 @@
         --form-initial-max: 1100px;
         --form-after-submit: 320px;  /* after submit */
 
-        /* Google published chart base size (must match your embed dimensions) */
+        /* Google published chart base size (adjust if your chart was published bigger) */
         --chart-base-w: 600;  /* px */
         --chart-base-h: 377;  /* px */
       }
 
-      /* Transparent page so EG background shows through */
+      /* Transparent page so Easygenerator background shows through */
       html, body { margin:0; padding:0; background:transparent; font-family: Arial, sans-serif; }
 
       .container { width:100%; margin:0 auto; padding:16px; box-sizing:border-box; padding-bottom:8px; }
@@ -39,7 +39,7 @@
 
       /* Chart scaler (makes fixed-size Google chart responsive) */
       #results .chart-outer { width:100%; margin:0 auto; }
-      #chartContainer { width:100%; overflow:hidden; }          /* prevents cut-off/scrollbars */
+      #chartContainer { width:100%; overflow:hidden; }
       #chartScaler {
         width: calc(var(--chart-base-w) * 1px);
         height: calc(var(--chart-base-h) * 1px);
@@ -68,8 +68,7 @@
         <iframe
           id="formFrame"
           title="Quick pulse: actions taken (Form)"
-          src="https://docs.google.com/forms/d/e/1FAIpQLSePnkxnhsjCdUVEYkUXFRT-IK0H5nDqQHjbOrNqdVxB67K9UQ/viewform?embedded=true">
-          <!-- Replace the src above with your new Form embed URL if different -->
+          src="https://docs.google.com/forms/d/e/1FAIpQLSdNpePe9Zl28HAcyaKRFUhJycyeGO9wTwZ3o5yIZLZeTd_JQA/viewform?embedded=true">
         </iframe>
       </div>
 
@@ -84,8 +83,7 @@
                 width="600"
                 height="377"
                 scrolling="no"
-                src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS1-u7X5Qm212u-m4uNqtbM4djbjHepF5vJMp2jAh_Yst-7tfvAVGjSwHNkElHNQPKdE52sfXL2y2ZH/pubchart?oid=543343219&amp;format=interactive">
-                <!-- Replace the src above with your Published Chart embed URL if different -->
+                src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS2QjprbNBzX0v1bb5x2g07exNBdXcULnZi3UhujzoRvhUVuyNGU4bOqkl1jtSDYu_e18WSQi3Gm9-L/pubchart?oid=1318458492&amp;format=interactive">
               </iframe>
             </div>
           </div>
