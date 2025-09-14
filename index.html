@@ -5,71 +5,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Form + Live Results</title>
 
-    <!-- ===== Embed configuration: UPDATE THESE when you get new embeds ===== -->
-    <script>
-      // Paste your new Google Form embed URL (the one that ends with viewform?embedded=true)
-      const FORM_EMBED_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdNpePe9Zl28HAcyaKRFUhJycyeGO9wTwZ3o5yIZLZeTd_JQA/viewform?embedded=true";
-
-      // Paste your new Google Sheets published chart URL (interactive pubchart)
-      const CHART_EMBED_BASE = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS2QjprbNBzX0v1bb5x2g07exNBdXcULnZi3UhujzoRvhUVuyNGU4bOqkl1jtSDYu_e18WSQi3Gm9-L/pubchart?oid=1318458492&format=interactive";
-
-      // If your new chart has a different native size, update these CSS variables in the <style> block too.
-    </script>
+    <!-- Light no-cache hints to reduce stale loads -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
 
     <style>
       :root{
-        /* Adjust these if your NEW chart's native size is different */
-        --form-initial-min: 640px;
+        /* Form sizing */
+        --form-initial-min: 640px;   /* while filling */
         --form-initial-max: 1100px;
-        --form-after-submit: 320px;
-        --chart-base-w: 600;   /* px (number only) */
-        --chart-base-h: 377;   /* px (number only) */
+        --form-after-submit: 320px;  /* after submit */
+
+        /* Google published chart base size (must match your embed dimensions) */
+        --chart-base-w: 600;  /* px */
+        --chart-base-h: 377;  /* px */
       }
 
-      html, body { margin:0; padding:0; background:#fff; font-family: Arial, sans-serif; }
-      .container { width: 100%; margin: 0 auto; padding: 16px; box-sizing: border-box; padding-bottom: 8px; }
-      .block { margin-bottom: 24px; }
-      .block:last-child { margin-bottom: 0; }
-      iframe { width: 100%; border: 0; display: block; }
+      /* Transparent page so EG background shows through */
+      html, body { margin:0; padding:0; background:transparent; font-family: Arial, sans-serif; }
 
+      .container { width:100%; margin:0 auto; padding:16px; box-sizing:border-box; padding-bottom:8px; }
+      .block { margin-bottom:24px; }
+      .block:last-child { margin-bottom:0; }
+
+      iframe { width:100%; border:0; display:block; }
+
+      /* Form: tall while filling, then shrinks */
       #formFrame {
         height: clamp(var(--form-initial-min), 90vh, var(--form-initial-max));
         transition: height 240ms ease;
       }
 
-      #results .chart-outer { width: 100%; margin: 0 auto; }
-      #chartContainer { width: 100%; overflow: hidden; }
+      /* Chart scaler (makes fixed-size Google chart responsive) */
+      #results .chart-outer { width:100%; margin:0 auto; }
+      #chartContainer { width:100%; overflow:hidden; }          /* prevents cut-off/scrollbars */
       #chartScaler {
         width: calc(var(--chart-base-w) * 1px);
         height: calc(var(--chart-base-h) * 1px);
-        transform-origin: 0 0;
+        transform-origin: 0 0;   /* scale from top-left */
       }
 
-      @media (max-width: 480px) { .container { padding: 12px; } }
+      @media (max-width: 480px) { .container { padding:12px; } }
 
-      .actions { margin: 0 0 12px 0; }
+      .actions { margin:0 0 12px 0; }
       .actions a {
-        text-decoration: none; display: inline-block; padding: 8px 12px;
-        border-radius: 8px; border: 1px solid #ddd;
+        text-decoration:none; display:inline-block; padding:8px 12px;
+        border-radius:8px; border:1px solid #ddd;
       }
     </style>
   </head>
   <body>
     <div class="container">
 
+      <!-- Optional “jump to results” link -->
       <div class="actions">
         <a href="#results">Skip to live results ↓</a>
       </div>
 
+      <!-- Google Form -->
       <div class="block">
         <iframe
           id="formFrame"
           title="Quick pulse: actions taken (Form)"
-          loading="lazy"
-          src="about:blank">
+          src="https://docs.google.com/forms/d/e/1FAIpQLSePnkxnhsjCdUVEYkUXFRT-IK0H5nDqQHjbOrNqdVxB67K9UQ/viewform?embedded=true">
+          <!-- Replace the src above with your new Form embed URL if different -->
         </iframe>
       </div>
 
+      <!-- Google Chart (responsive via scaling) -->
       <div class="block" id="results">
         <div class="chart-outer">
           <div id="chartContainer">
@@ -77,9 +81,11 @@
               <iframe
                 id="chartFrame"
                 title="Live results chart"
-                width="600" height="377" scrolling="no"
-                loading="lazy"
-                src="about:blank">
+                width="600"
+                height="377"
+                scrolling="no"
+                src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS1-u7X5Qm212u-m4uNqtbM4djbjHepF5vJMp2jAh_Yst-7tfvAVGjSwHNkElHNQPKdE52sfXL2y2ZH/pubchart?oid=543343219&amp;format=interactive">
+                <!-- Replace the src above with your Published Chart embed URL if different -->
               </iframe>
             </div>
           </div>
@@ -88,23 +94,7 @@
     </div>
 
     <script>
-      /* ----- util: report height to parent (Easygenerator) ----- */
-      function sendHeight(reason) {
-        try {
-          var h = Math.ceil(document.documentElement.scrollHeight);
-          window.parent.postMessage({ type: 'EG_IFRAME_HEIGHT', height: h, reason: reason || '' }, '*');
-        } catch(e) { /* ignore */ }
-      }
-
-      // Set initial iframe srcs from the configurable constants
-      (function initEmbeds(){
-        var form = document.getElementById('formFrame');
-        var chart = document.getElementById('chartFrame');
-        if (form && FORM_EMBED_URL) form.src = FORM_EMBED_URL;
-        if (chart && CHART_EMBED_BASE) chart.src = CHART_EMBED_BASE;
-      })();
-
-      /* A) Shrink the form after submission, then scroll to results, then report height */
+      /* Shrink the form after submission, then scroll precisely to results */
       (function () {
         var form = document.getElementById('formFrame');
         var results = document.getElementById('results');
@@ -114,9 +104,8 @@
         function refreshChartSoon() {
           var chart = document.getElementById('chartFrame');
           if (!chart) return;
-          var base = CHART_EMBED_BASE;
-          var joiner = base.indexOf('?') === -1 ? '?' : '&';
-          chart.src = base + joiner + "v=" + Date.now();
+          var base = chart.src.split('&v=')[0]; // keep original URL, drop old cache buster if present
+          chart.src = base + "&v=" + Date.now();
         }
 
         function scrollToResults() {
@@ -127,9 +116,7 @@
 
         form.addEventListener('load', function () {
           loadCount += 1;
-
           if (loadCount > 1) {
-            // shrink form height to remove big white space
             form.style.height = 'var(--form-after-submit)';
 
             var done = false;
@@ -139,24 +126,22 @@
               done = true;
               form.removeEventListener('transitionend', onEnd);
               scrollToResults();
-              setTimeout(refreshChartSoon, 400);
-              setTimeout(function(){ sendHeight('after-submit'); }, 450);
+              setTimeout(refreshChartSoon, 500);
             }
             form.addEventListener('transitionend', onEnd, { once: true });
 
-            // Fallback
+            // Fallback in case transitionend doesn’t fire
             setTimeout(function () {
               if (!done) {
                 scrollToResults();
                 refreshChartSoon();
-                sendHeight('after-submit-fallback');
               }
-            }, 500);
+            }, 350);
           }
         }, { passive: true });
       })();
 
-      /* B) Make the fixed-size chart scale with width; report height each time */
+      /* Scale the fixed-size chart to fit the available width */
       (function () {
         var outer = document.querySelector('.chart-outer');
         var container = document.getElementById('chartContainer');
@@ -167,14 +152,13 @@
         var BASE_H = parseFloat(getComputedStyle(scaler).height) || 377;
 
         function resize() {
-          var cw = outer.clientWidth;
-          var scale = cw / BASE_W;
+          var cw = outer.clientWidth;                 /* available width */
+          var scale = cw / BASE_W;                    /* exact scale to fill width */
           scaler.style.transform = 'scale(' + scale + ')';
-          container.style.height = (BASE_H * scale) + 'px';
-          sendHeight('resize');
+          container.style.height = (BASE_H * scale) + 'px'; /* reserve correct height */
         }
 
-        window.addEventListener('load', function(){ resize(); sendHeight('load'); });
+        window.addEventListener('load', resize);
         window.addEventListener('resize', function () { requestAnimationFrame(resize); });
         window.addEventListener('orientationchange', function () { setTimeout(resize, 150); });
       })();
