@@ -1,1 +1,165 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Form + Live Results</title>
 
+    <!-- Light no-cache hints -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <style>
+      :root{
+        /* Form sizing */
+        --form-initial-min: 640px;   /* while filling */
+        --form-initial-max: 1100px;
+        --form-after-submit: 320px;  /* after submit */
+
+        /* Google published chart base size (adjust if your chart was published bigger) */
+        --chart-base-w: 600;  /* px */
+        --chart-base-h: 377;  /* px */
+      }
+
+      /* Transparent page so Easygenerator background shows through */
+      html, body { margin:0; padding:0; background:transparent; font-family: Arial, sans-serif; }
+
+      .container { width:100%; margin:0 auto; padding:16px; box-sizing:border-box; padding-bottom:8px; }
+      .block { margin-bottom:24px; }
+      .block:last-child { margin-bottom:0; }
+
+      iframe { width:100%; border:0; display:block; }
+
+      /* Form: tall while filling, then shrinks */
+      #formFrame {
+        height: clamp(var(--form-initial-min), 90vh, var(--form-initial-max));
+        transition: height 240ms ease;
+      }
+
+      /* Chart scaler (makes fixed-size Google chart responsive) */
+      #results .chart-outer { width:100%; margin:0 auto; }
+      #chartContainer { width:100%; overflow:hidden; }
+      #chartScaler {
+        width: calc(var(--chart-base-w) * 1px);
+        height: calc(var(--chart-base-h) * 1px);
+        transform-origin: 0 0;   /* scale from top-left */
+      }
+
+      @media (max-width: 480px) { .container { padding:12px; } }
+
+      .actions { margin:0 0 12px 0; }
+      .actions a {
+        text-decoration:none; display:inline-block; padding:8px 12px;
+        border-radius:8px; border:1px solid #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+
+      <!-- Optional “jump to results” link -->
+      <div class="actions">
+        <a href="#results">Skip to live results ↓</a>
+      </div>
+
+      <!-- Google Form -->
+      <div class="block">
+        <iframe
+          id="formFrame"
+          title="Quick pulse: actions taken (Form)"
+          src="https://docs.google.com/forms/d/e/1FAIpQLSewyryWW9z0BbXsWNp8bjKLtJeF97PrYZgaSCgpf_T2VZHDRQ/viewform?usp=dialog">
+        </iframe>
+      </div>
+
+      <!-- Google Chart (responsive via scaling) -->
+      <div class="block" id="results">
+        <div class="chart-outer">
+          <div id="chartContainer">
+            <div id="chartScaler">
+              <iframe
+                id="chartFrame"
+                title="Live results chart"
+                width="600"
+                height="377"
+                scrolling="no"
+                src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQfEz2qHhCw05pkdRJnKcWbjL3l6jXKiyX11qBa4A1a_KaItTNsQijp51LxInpkF-k5eDQio2jYraTK/pubchart?oid=2120738071&amp;format=interactive">
+              </iframe>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /* Shrink the form after submission, then scroll precisely to results */
+      (function () {
+        var form = document.getElementById('formFrame');
+        var results = document.getElementById('results');
+        var loadCount = 0;
+        if (!form || !results) return;
+
+        function refreshChartSoon() {
+          var chart = document.getElementById('chartFrame');
+          if (!chart) return;
+          var base = chart.src.split('&v=')[0]; // keep original URL, drop old cache buster if present
+          chart.src = base + "&v=" + Date.now();
+        }
+
+        function scrollToResults() {
+          var offset = 8;
+          var y = results.getBoundingClientRect().top + window.pageYOffset - offset;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+
+        form.addEventListener('load', function () {
+          loadCount += 1;
+          if (loadCount > 1) {
+            form.style.height = 'var(--form-after-submit)';
+
+            var done = false;
+            function onEnd(e) {
+              if (done) return;
+              if (e.propertyName !== 'height') return;
+              done = true;
+              form.removeEventListener('transitionend', onEnd);
+              scrollToResults();
+              setTimeout(refreshChartSoon, 500);
+            }
+            form.addEventListener('transitionend', onEnd, { once: true });
+
+            // Fallback in case transitionend doesn’t fire
+            setTimeout(function () {
+              if (!done) {
+                scrollToResults();
+                refreshChartSoon();
+              }
+            }, 350);
+          }
+        }, { passive: true });
+      })();
+
+      /* Scale the fixed-size chart to fit the available width */
+      (function () {
+        var outer = document.querySelector('.chart-outer');
+        var container = document.getElementById('chartContainer');
+        var scaler = document.getElementById('chartScaler');
+        if (!outer || !container || !scaler) return;
+
+        var BASE_W = parseFloat(getComputedStyle(scaler).width)  || 600;
+        var BASE_H = parseFloat(getComputedStyle(scaler).height) || 377;
+
+        function resize() {
+          var cw = outer.clientWidth;                 /* available width */
+          var scale = cw / BASE_W;                    /* exact scale to fill width */
+          scaler.style.transform = 'scale(' + scale + ')';
+          container.style.height = (BASE_H * scale) + 'px'; /* reserve correct height */
+        }
+
+        window.addEventListener('load', resize);
+        window.addEventListener('resize', function () { requestAnimationFrame(resize); });
+        window.addEventListener('orientationchange', function () { setTimeout(resize, 150); });
+      })();
+    </script>
+  </body>
+</html>
