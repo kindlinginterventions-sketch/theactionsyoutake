@@ -16,12 +16,12 @@
         --form-initial-max: 900px;
         --form-after-submit: 220px;
 
-        /* Chart base size: set these to the larger size you made in Google Sheets */
-        --chart-base-w: 1200;
-        --chart-base-h: 700;
+        /* Use the original working chart base size */
+        --chart-base-w: 600;
+        --chart-base-h: 377;
 
-        /* No extra legend padding - assumed included in chart height above */
-        --chart-legend-h: 0;
+        /* Extra height for legend underneath */
+        --chart-legend-h: 120;
       }
 
       html, body {
@@ -53,13 +53,11 @@
         background: transparent;
       }
 
-      /* Form: tall while filling, then shrinks after submit */
       #formFrame {
         height: clamp(var(--form-initial-min), 88vh, var(--form-initial-max));
         transition: height 240ms ease;
       }
 
-      /* Chart scaling */
       #results .chart-outer {
         width: 100%;
         margin: 0 auto;
@@ -91,7 +89,6 @@
   <body>
     <div class="container">
 
-      <!-- Google Form -->
       <div class="block">
         <iframe
           id="formFrame"
@@ -100,7 +97,6 @@
         </iframe>
       </div>
 
-      <!-- Google Chart -->
       <div class="block" id="results">
         <div class="chart-outer">
           <div id="chartContainer">
@@ -108,8 +104,8 @@
               <iframe
                 id="chartFrame"
                 title="Live results chart"
-                width="1200"
-                height="700"
+                width="600"
+                height="497"
                 scrolling="no"
                 src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS2QjprbNBzX0v1bb5x2g07exNBdXcULnZi3UhujzoRvhUVuyNGU4bOqkl1jtSDYu_e18WSQi3Gm9-L/pubchart?oid=1318458492&amp;format=interactive">
               </iframe>
@@ -121,7 +117,6 @@
     </div>
 
     <script>
-      /* Shrink form after submission, scroll to chart, refresh chart */
       (function () {
         var form = document.getElementById('formFrame');
         var results = document.getElementById('results');
@@ -168,20 +163,18 @@
         }, { passive: true });
       })();
 
-      /* Scale chart to fit available width */
       (function () {
         var outer = document.querySelector('.chart-outer');
         var container = document.getElementById('chartContainer');
         var scaler = document.getElementById('chartScaler');
         if (!outer || !container || !scaler) return;
 
-        function resize() {
-          var BASE_W = parseFloat(getComputedStyle(scaler).width) || 1200;
-          var BASE_H = parseFloat(getComputedStyle(scaler).height) || 700;
+        var BASE_W = 600;
+        var BASE_H = 497; /* 377 + 120 legend */
 
+        function resize() {
           var cw = outer.clientWidth;
           var scale = cw / BASE_W;
-
           scaler.style.transform = 'scale(' + scale + ')';
           container.style.height = (BASE_H * scale) + 'px';
         }
